@@ -10,7 +10,8 @@ import MapGL, {
 import "maplibre-gl/dist/maplibre-gl.css";
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { stations, type Station } from "@/lib/mockData";
+import type { Station } from "@/types/weather";
+import { useWeather } from "@/hooks/useWeather";
 import {
   Thermometer,
   Droplets,
@@ -23,16 +24,19 @@ import {
 const LIGHT_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const DARK_STYLE = "https://tiles.openfreemap.org/styles/dark";
 
-// Initial viewport centered on Java, Indonesia
+// Initial viewport centered on Java, Indonesia (or specific station)
 const INITIAL_VIEW = {
-  longitude: 108.5,
-  latitude: -6.9,
+  longitude: parseFloat(process.env.NEXT_PUBLIC_STATION_LON || "106.7308"),
+  latitude: parseFloat(process.env.NEXT_PUBLIC_STATION_LAT || "-6.5577"),
   zoom: 6.5,
 };
 
 export default function StationMap() {
   const { resolvedTheme } = useTheme();
+  const { station } = useWeather();
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+
+  const stations = station ? [station] : [];
 
   const handleMarkerClick = useCallback(
     (station: Station) => {
@@ -145,7 +149,7 @@ export default function StationMap() {
                   Suhu
                 </div>
                 <p className="text-sm font-semibold">
-                  {selectedStation.current.temperature}
+                  {selectedStation.latestData?.temperature ?? "--"}
                   <span className="text-[10px] font-normal opacity-50"> C</span>
                 </p>
               </div>
@@ -155,7 +159,7 @@ export default function StationMap() {
                   Kelembaban
                 </div>
                 <p className="text-sm font-semibold">
-                  {selectedStation.current.humidity}
+                  {selectedStation.latestData?.humidity ?? "--"}
                   <span className="text-[10px] font-normal opacity-50"> %</span>
                 </p>
               </div>
@@ -165,7 +169,7 @@ export default function StationMap() {
                   Tekanan
                 </div>
                 <p className="text-sm font-semibold">
-                  {selectedStation.current.pressure}
+                  {selectedStation.latestData?.pressure ?? "--"}
                   <span className="text-[10px] font-normal opacity-50"> hPa</span>
                 </p>
               </div>
