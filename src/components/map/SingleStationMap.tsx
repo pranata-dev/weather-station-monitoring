@@ -28,8 +28,9 @@ export default function SingleStationMap({ station }: { station: Station }) {
 
   const mapStyle = resolvedTheme === "dark" ? DARK_STYLE : LIGHT_STYLE;
 
-  const lat = parseFloat(process.env.NEXT_PUBLIC_STATION_LAT || "-6.1500");
-  const lon = parseFloat(process.env.NEXT_PUBLIC_STATION_LON || "106.9000");
+  // Coordinates are already resolved in the parent (API -> env-var fallback)
+  const lat = station.coordinates[0];
+  const lon = station.coordinates[1];
 
   const initialView = {
     longitude: lon,

@@ -30,16 +30,20 @@ export function useWeather() {
         const historyData = await historyRes.json();
 
         if (isMounted) {
+          const latest = latestData.data || null;
+          const envLat = parseFloat(process.env.NEXT_PUBLIC_STATION_LAT || "-6.5577");
+          const envLon = parseFloat(process.env.NEXT_PUBLIC_STATION_LON || "106.7308");
+
           setStation({
             id: "ST-01",
             name: "Stasiun Pusat",
             location: "Bogor, Jawa Barat, Indonesia",
             status: "online",
             coordinates: [
-              parseFloat(process.env.NEXT_PUBLIC_STATION_LAT || "-6.5577"),
-              parseFloat(process.env.NEXT_PUBLIC_STATION_LON || "106.7308")
+              latest?.lat != null ? latest.lat : envLat,
+              latest?.lon != null ? latest.lon : envLon,
             ],
-            latestData: latestData.data || null,
+            latestData: latest,
             timeSeries: historyData.data || [],
           });
         }

@@ -10,6 +10,8 @@ export interface WeatherData {
   rain: number;
   pm1: number;
   pm2_5: number;
+  lat?: number;
+  lon?: number;
 }
 
 export interface Station {

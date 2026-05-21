@@ -11,12 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { HistoricalDataDialog } from "@/components/dialogs/HistoricalDataDialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Thermometer,
@@ -108,16 +103,20 @@ export default function DashboardPage() {
         const historyData = await historyRes.json();
 
         if (isMounted) {
+          const latest = latestData.data || null;
+          const envLat = parseFloat(process.env.NEXT_PUBLIC_STATION_LAT || "-6.5577");
+          const envLon = parseFloat(process.env.NEXT_PUBLIC_STATION_LON || "106.7308");
+
           setStation({
             id: "ST-01",
             name: "Stasiun Pusat",
             location: "Bogor, Jawa Barat, Indonesia",
             status: "online",
             coordinates: [
-              parseFloat(process.env.NEXT_PUBLIC_STATION_LAT || "-6.5577"),
-              parseFloat(process.env.NEXT_PUBLIC_STATION_LON || "106.7308")
+              latest?.lat != null ? latest.lat : envLat,
+              latest?.lon != null ? latest.lon : envLon,
             ],
-            latestData: latestData.data || null,
+            latestData: latest,
             timeSeries: historyData.data || [],
           });
         }
@@ -324,47 +323,12 @@ export default function DashboardPage() {
             ))
           )}
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-md sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Data Historis - {selectedMetric?.title}</DialogTitle>
-            </DialogHeader>
-            <div className="max-h-[60vh] overflow-y-auto rounded-md border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted sticky top-0 z-10 shadow-sm">
-                  <tr>
-                    <th className="p-3 text-left font-medium">Waktu (WIB)</th>
-                    <th className="p-3 text-right font-medium">Nilai</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {station?.timeSeries && station.timeSeries.length > 0 ? (
-                    station.timeSeries.map((row, idx) => {
-                      const val = selectedMetric ? row[selectedMetric.id as keyof typeof row] : null;
-                      return (
-                        <tr key={idx} className="hover:bg-muted/50 transition-colors">
-                          <td className="p-3 text-muted-foreground whitespace-nowrap">
-                            {formatToWIB(row.timestamp, "full")}
-                          </td>
-                          <td className="p-3 text-right tabular-nums font-medium">
-                            {val !== null && val !== undefined ? String(val) : "--"}
-                            <span className="text-xs ml-1 text-muted-foreground font-normal">{selectedMetric?.unit}</span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={2} className="p-6 text-center text-muted-foreground">
-                        Belum ada data historis.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <HistoricalDataDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          selectedMetric={selectedMetric}
+          timeSeries={station?.timeSeries || []}
+        />
 
       </main>
     </div>
