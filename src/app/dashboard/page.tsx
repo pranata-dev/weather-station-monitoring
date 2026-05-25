@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { StationAccessDialog } from "@/components/dialogs/StationAccessDialog";
+import { useWeather } from "@/hooks/useWeather";
 import { Badge } from "@/components/ui/badge";
 import {
   Thermometer,
@@ -69,84 +70,10 @@ function getTimeOfDayInfo(timestamp: string | null | undefined) {
 }
 
 export default function DashboardPage() {
-  const [station, setStation] = useState<Station | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { stations, isLoading, error } = useWeather();
   
   const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(false);
   const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
-
-
-  useEffect(() => {
-    let isMounted = true;
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-    const fetchData = async () => {
-      try {
-        setError(null);
-
-        const [latestRes, historyRes] = await Promise.all([
-          fetch(`${API_URL}/api/v1/sensor/latest`),
-          fetch(`${API_URL}/api/v1/sensor/history?limit=2100`)
-        ]);
-
-        if (!latestRes.ok || !historyRes.ok) {
-          throw new Error("Failed to fetch telemetry data");
-        }
-
-        const latestData = await latestRes.json();
-        const historyData = await historyRes.json();
-
-        if (isMounted) {
-          const latest = latestData.data || null;
-          const envLat = parseFloat(process.env.NEXT_PUBLIC_STATION_LAT || "-6.5577");
-          const envLon = parseFloat(process.env.NEXT_PUBLIC_STATION_LON || "106.7308");
-
-          let stationStatus: "online" | "offline" = "offline";
-          if (latest?.timestamp) {
-            const latestDate = new Date(latest.timestamp + "Z");
-            const now = new Date();
-            if (now.getTime() - latestDate.getTime() <= 1800000) {
-              stationStatus = "online";
-            }
-          }
-
-          setStation({
-            id: "ST-01",
-            name: "Stasiun Pusat",
-            location: "Bogor, Jawa Barat, Indonesia",
-            status: stationStatus,
-            coordinates: [
-              latest?.lat != null ? latest.lat : envLat,
-              latest?.lon != null ? latest.lon : envLon,
-            ],
-            latestData: latest,
-            timeSeries: historyData.data || [],
-          });
-        }
-      } catch (err) {
-        console.error("Dashboard Fetch Error:", err);
-        if (isMounted) {
-          setError("Connection Error");
-          setStation(null);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchData();
-    const intervalId = setInterval(fetchData, 60000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(intervalId);
-    };
-  }, []);
-
-  const stations: Station[] = station ? [station] : [];
   const onlineCount = stations.filter((s) => s.status === "online").length;
   const offlineCount = stations.filter((s) => s.status === "offline").length;
 

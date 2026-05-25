@@ -34,11 +34,9 @@ const INITIAL_VIEW = {
 
 export default function StationMap() {
   const { resolvedTheme } = useTheme();
-  const { station } = useWeather();
+  const { stations } = useWeather();
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(false);
-
-  const stations = station ? [station] : [];
 
   const handleMarkerClick = useCallback(
     (station: Station) => {

@@ -28,6 +28,7 @@ import {
   Moon,
 } from "lucide-react";
 import { HistoricalDataDialog } from "@/components/dialogs/HistoricalDataDialog";
+import { useWeather, fetchStationHistory } from "@/hooks/useWeather";
 
 const SingleStationMap = dynamic(
   () => import("@/components/map/SingleStationMap"),
@@ -72,9 +73,11 @@ export default function StationDetailPage({
 }) {
   const { id } = use(params);
   
-  const [station, setStation] = useState<Station | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { stations, isLoading: isStationsLoading, error: stationsError } = useWeather();
+  const stationInfo = stations.find(s => s.id === id);
+
+  const [timeSeries, setTimeSeries] = useState<any[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
 
   const [selectedMetric, setSelectedMetric] = useState<{
     id: string;
@@ -85,69 +88,24 @@ export default function StationDetailPage({
 
   useEffect(() => {
     let isMounted = true;
-
-    async function fetchData() {
-      try {
-        setError(null);
-        
-        const [latestRes, historyRes] = await Promise.all([
-          fetch(`${API_URL}/api/v1/sensor/latest`),
-          fetch(`${API_URL}/api/v1/sensor/history?limit=2100`)
-        ]);
-
-        if (!latestRes.ok || !historyRes.ok) {
-          throw new Error("Failed to fetch telemetry data");
-        }
-
-        const latestData = await latestRes.json();
-        const historyData = await historyRes.json();
-
-        if (isMounted) {
-          const latest = latestData.data || null;
-          const envLat = parseFloat(process.env.NEXT_PUBLIC_STATION_LAT || "-6.5577");
-          const envLon = parseFloat(process.env.NEXT_PUBLIC_STATION_LON || "106.7308");
-
-          let stationStatus: "online" | "offline" = "offline";
-          if (latest?.timestamp) {
-            const latestDate = new Date(latest.timestamp + "Z");
-            const now = new Date();
-            if (now.getTime() - latestDate.getTime() <= 1800000) {
-              stationStatus = "online";
-            }
-          }
-
-          setStation({
-            id: "ST-01",
-            name: "Stasiun Pusat",
-            location: "Bogor, Jawa Barat, Indonesia",
-            status: stationStatus,
-            coordinates: [
-              latest?.lat != null ? latest.lat : envLat,
-              latest?.lon != null ? latest.lon : envLon,
-            ],
-            latestData: latest,
-            timeSeries: historyData.data || [],
-          });
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError("Connection Error");
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+    async function loadHistory() {
+      setIsHistoryLoading(true);
+      const data = await fetchStationHistory(id, 2100);
+      if (isMounted) {
+        setTimeSeries(data);
+        setIsHistoryLoading(false);
       }
     }
-
-    fetchData();
-    const intervalId = setInterval(fetchData, 60000);
-
+    loadHistory();
+    const interval = setInterval(loadHistory, 60000);
     return () => {
       isMounted = false;
-      clearInterval(intervalId);
+      clearInterval(interval);
     };
-  }, []);
+  }, [id]);
+
+  const isLoading = isStationsLoading || isHistoryLoading;
+  const error = stationsError;
 
   const handleMetricClick = (
     e: React.MouseEvent,
@@ -161,7 +119,10 @@ export default function StationDetailPage({
     setIsDialogOpen(true);
   };
 
-  const currentStation: Station = station || {
+  const currentStation: Station = stationInfo ? {
+    ...stationInfo,
+    timeSeries
+  } : {
     id,
     name: `Stasiun ${id}`,
     location: "Lokasi Belum Diketahui",
@@ -375,7 +336,7 @@ export default function StationDetailPage({
 
           <div>
             <h2 className="mb-4 text-lg font-semibold">Lokasi Stasiun</h2>
-            {isLoading || !station ? (
+            {isLoading || !stationInfo ? (
               <div className="flex h-[300px] w-full items-center justify-center rounded-xl border border-dashed border-border bg-muted/20">
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                   <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
