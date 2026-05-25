@@ -107,6 +107,14 @@ export default function StationDetailPage({
           const envLat = parseFloat(process.env.NEXT_PUBLIC_STATION_LAT || "-6.5577");
           const envLon = parseFloat(process.env.NEXT_PUBLIC_STATION_LON || "106.7308");
 
+          const oneDayAgo = new Date();
+          oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+
+          const filteredTimeSeries = (historyData.data || []).filter((item: any) => {
+              const itemDate = new Date(item.timestamp + "Z");
+              return itemDate >= oneDayAgo;
+          });
+
           setStation({
             id: "ST-01",
             name: "Stasiun Pusat",
@@ -117,17 +125,7 @@ export default function StationDetailPage({
               latest?.lon != null ? latest.lon : envLon,
             ],
             latestData: latest,
-            timeSeries: (() => {
-              const oneDayAgo = new Date();
-              oneDayAgo.setHours(oneDayAgo.getHours() - 24);
-              const rawData = historyData.data || [];
-              return rawData.filter((row: any) => {
-                const ts = row.timestamp?.endsWith("Z") || row.timestamp?.includes("+")
-                  ? row.timestamp
-                  : `${row.timestamp}Z`;
-                return new Date(ts) >= oneDayAgo;
-              });
-            })(),
+            timeSeries: filteredTimeSeries,
           });
         }
       } catch (err) {
