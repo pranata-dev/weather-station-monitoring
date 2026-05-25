@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { HistoricalDataDialog } from "@/components/dialogs/HistoricalDataDialog";
+
 import { Badge } from "@/components/ui/badge";
 import {
   Thermometer,
@@ -72,15 +72,7 @@ export default function DashboardPage() {
   const [station, setStation] = useState<Station | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedMetric, setSelectedMetric] = useState<{ id: string; title: string; unit: string } | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleMetricClick = (e: React.MouseEvent, metricId: string, title: string, unit: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSelectedMetric({ id: metricId, title, unit });
-    setIsDialogOpen(true);
-  };
 
   useEffect(() => {
     let isMounted = true;
@@ -92,7 +84,7 @@ export default function DashboardPage() {
 
         const [latestRes, historyRes] = await Promise.all([
           fetch(`${API_URL}/api/v1/sensor/latest`),
-          fetch(`${API_URL}/api/v1/sensor/history?limit=50`)
+          fetch(`${API_URL}/api/v1/sensor/history?limit=288`)
         ]);
 
         if (!latestRes.ok || !historyRes.ok) {
@@ -117,7 +109,17 @@ export default function DashboardPage() {
               latest?.lon != null ? latest.lon : envLon,
             ],
             latestData: latest,
-            timeSeries: historyData.data || [],
+            timeSeries: (() => {
+              const oneDayAgo = new Date();
+              oneDayAgo.setHours(oneDayAgo.getHours() - 24);
+              const rawData = historyData.data || [];
+              return rawData.filter((row: any) => {
+                const ts = row.timestamp?.endsWith("Z") || row.timestamp?.includes("+")
+                  ? row.timestamp
+                  : `${row.timestamp}Z`;
+                return new Date(ts) >= oneDayAgo;
+              });
+            })(),
           });
         }
       } catch (err) {
@@ -296,8 +298,7 @@ export default function DashboardPage() {
                       ].map((metric) => (
                         <div
                           key={metric.id}
-                          className="rounded-lg bg-muted/60 p-2.5 hover:bg-accent hover:cursor-pointer transition-colors"
-                          onClick={(e) => handleMetricClick(e, metric.id, metric.label, metric.unit)}
+                          className="rounded-lg bg-muted/60 p-2.5 cursor-default"
                         >
                           <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                             <metric.icon className={`h-3 w-3 ${metric.color}`} />
@@ -323,12 +324,7 @@ export default function DashboardPage() {
             ))
           )}
         </div>
-        <HistoricalDataDialog
-          open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
-          selectedMetric={selectedMetric}
-          timeSeries={station?.timeSeries || []}
-        />
+
 
       </main>
     </div>
