@@ -21,8 +21,8 @@ import {
   WifiOff,
 } from "lucide-react";
 
-const LIGHT_STYLE = "https://tiles.openfreemap.org/styles/liberty";
-const DARK_STYLE = "https://tiles.openfreemap.org/styles/dark";
+const LIGHT_STYLE = "https://tiles.versatiles.org/assets/styles/colorful/style.json";
+const DARK_STYLE = "https://tiles.versatiles.org/assets/styles/eclipse/style.json";
 
 // Initial viewport centered on Java, Indonesia (or specific station)
 const INITIAL_VIEW = {
@@ -123,11 +123,10 @@ export default function StationMap() {
                 </p>
               </div>
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                  selectedStation.status === "online"
-                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                    : "bg-red-500/15 text-red-600 dark:text-red-400"
-                }`}
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${selectedStation.status === "online"
+                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                  : "bg-red-500/15 text-red-600 dark:text-red-400"
+                  }`}
               >
                 {selectedStation.status === "online" ? (
                   <Wifi className="h-2.5 w-2.5" />

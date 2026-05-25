@@ -6,8 +6,8 @@ import { useTheme } from "next-themes";
 import type { Station } from "@/types/weather";
 import { useEffect, useState } from "react";
 
-const LIGHT_STYLE = "https://tiles.openfreemap.org/styles/liberty";
-const DARK_STYLE = "https://tiles.openfreemap.org/styles/dark";
+const LIGHT_STYLE = "https://tiles.versatiles.org/assets/styles/colorful/style.json";
+const DARK_STYLE = "https://tiles.versatiles.org/assets/styles/eclipse/style.json";
 
 export default function SingleStationMap({ station }: { station: Station }) {
   const { resolvedTheme } = useTheme();

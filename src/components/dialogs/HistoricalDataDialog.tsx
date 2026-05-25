@@ -6,12 +6,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { formatToWIB } from "@/lib/utils";
-import { Download } from "lucide-react";
+import { formatToWIB, downloadCSV } from "@/lib/utils";
+import { Download, Loader2 } from "lucide-react";
 import type { WeatherData } from "@/types/weather";
 
 interface HistoricalDataDialogProps {
@@ -31,6 +32,12 @@ export function HistoricalDataDialog({
   const [endDate, setEndDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [visibleCount, setVisibleCount] = useState(10);
 
   const filteredData = useMemo(() => {
     if (!timeSeries || timeSeries.length === 0) return [];
@@ -70,26 +77,48 @@ export function HistoricalDataDialog({
     });
   }, [timeSeries, startDate, endDate, startTime, endTime]);
 
-  const handleDownload = () => {
+  const visibleData = useMemo(() => {
+    return filteredData.slice(0, visibleCount);
+  }, [filteredData, visibleCount]);
+
+  const handleDownloadClick = () => {
+    setPassword("");
+    setPasswordError("");
+    setIsPasswordOpen(true);
+  };
+
+  const verifyAndDownload = async () => {
     if (!selectedMetric || filteredData.length === 0) return;
 
-    let csv = "Timestamp (WIB),Value (Unit)\n";
-    filteredData.forEach((row) => {
-      const timestampWIB = formatToWIB(row.timestamp, "full").replace(/,/g, "");
-      const val = row[selectedMetric.id as keyof WeatherData];
-      const valStr = val !== null && val !== undefined ? String(val) : "";
-      csv += `${timestampWIB},${valStr} ${selectedMetric.unit}\n`;
-    });
+    setIsVerifying(true);
+    setPasswordError("");
 
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `raw_${selectedMetric.id}_export.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    try {
+      const res = await fetch("/api/verify-export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stationId: "ST-01", // Currently hardcoded in the frontend logic for single station view
+          password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setPasswordError(data.error || "Gagal memverifikasi password.");
+        setIsVerifying(false);
+        return;
+      }
+
+      // If success, proceed to download
+      downloadCSV(filteredData, selectedMetric.id, selectedMetric.unit, "ST-01");
+      setIsPasswordOpen(false);
+    } catch (err) {
+      setPasswordError("Kesalahan jaringan, coba lagi.");
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   return (
@@ -97,6 +126,9 @@ export function HistoricalDataDialog({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Data Historis - {selectedMetric?.title}</DialogTitle>
+          <DialogDescription className="hidden">
+            Tabel riwayat data telemetri untuk {selectedMetric?.title}
+          </DialogDescription>
         </DialogHeader>
         
         <div className="mt-4 flex flex-col gap-4">
@@ -142,7 +174,7 @@ export function HistoricalDataDialog({
               />
             </div>
             <Button 
-              onClick={handleDownload}
+              onClick={handleDownloadClick}
               disabled={filteredData.length === 0}
               className="ml-auto flex items-center gap-2"
             >
@@ -160,8 +192,8 @@ export function HistoricalDataDialog({
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {filteredData.length > 0 ? (
-                  filteredData.map((row, idx) => {
+                {visibleData.length > 0 ? (
+                  visibleData.map((row, idx) => {
                     const val = selectedMetric ? row[selectedMetric.id as keyof WeatherData] : null;
                     return (
                       <tr key={idx} className="hover:bg-muted/50 transition-colors">
@@ -186,9 +218,65 @@ export function HistoricalDataDialog({
                 )}
               </tbody>
             </table>
+            
+            {visibleCount < filteredData.length && (
+              <div className="p-4 border-t border-border">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => setVisibleCount((prev) => prev + 10)}
+                >
+                  Lihat selengkapnya
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
+
+      <Dialog open={isPasswordOpen} onOpenChange={setIsPasswordOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Verifikasi Akses</DialogTitle>
+            <DialogDescription>
+              Masukkan password station untuk mengunduh data raw CSV.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Masukkan password..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") verifyAndDownload();
+                }}
+              />
+              {passwordError && (
+                <p className="text-sm text-red-500 font-medium">{passwordError}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsPasswordOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={verifyAndDownload} disabled={isVerifying || !password}>
+              {isVerifying ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Memverifikasi...
+                </>
+              ) : (
+                "Unduh"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
