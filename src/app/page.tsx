@@ -28,7 +28,7 @@ export default function HomePage() {
           <div className="rounded-xl border border-border/50 bg-card/90 p-4 shadow-2xl backdrop-blur-xl">
             <div className="mb-2.5 flex items-center gap-2">
               <Radio className="h-4 w-4 text-blue-400" />
-              <h2 className="text-sm font-semibold">Ikhtisar Stasiun</h2>
+              <h2 className="text-sm font-semibold">Ringkasan Stasiun</h2>
             </div>
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-1.5">

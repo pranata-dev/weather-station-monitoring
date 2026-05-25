@@ -46,7 +46,7 @@ function getTimeOfDayInfo(timestamp: string | null | undefined) {
     hour12: false,
     minute: "numeric",
   }).format(date);
-  
+
   const [hourStr, minStr] = wibTime.replace(/\./g, ":").split(":");
   const hour = parseInt(hourStr, 10);
   const minute = parseInt(minStr, 10);
@@ -56,7 +56,7 @@ function getTimeOfDayInfo(timestamp: string | null | undefined) {
   // 12:00 (720) to 14:59 (899) -> Siang
   // 15:00 (900) to 18:29 (1109) -> Sore
   // 18:30 (1110) to 04:59 (299) -> Malam
-  
+
   if (totalMinutes >= 300 && totalMinutes <= 719) {
     return { text: "Pagi", icon: <CloudSun className="w-6 h-6 text-sky-400" /> };
   } else if (totalMinutes >= 720 && totalMinutes <= 899) {
@@ -89,7 +89,7 @@ export default function DashboardPage() {
     const fetchData = async () => {
       try {
         setError(null);
-        
+
         const [latestRes, historyRes] = await Promise.all([
           fetch(`${API_URL}/api/v1/sensor/latest`),
           fetch(`${API_URL}/api/v1/sensor/history?limit=50`)
@@ -154,7 +154,7 @@ export default function DashboardPage() {
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold tracking-tight">
-            Dasbor Stasiun
+            Dashboard Stasiun
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Gambaran umum semua stasiun cuaca terdaftar dan status terkini.
@@ -310,7 +310,7 @@ export default function DashboardPage() {
                         </div>
                       ))}
                     </div>
-                    <Link 
+                    <Link
                       href={`/station/${station.id}`}
                       className="mt-3 flex items-center justify-end text-xs text-muted-foreground transition-colors hover:text-primary"
                     >
