@@ -107,13 +107,20 @@ export default function StationDetailPage({
           const envLat = parseFloat(process.env.NEXT_PUBLIC_STATION_LAT || "-6.5577");
           const envLon = parseFloat(process.env.NEXT_PUBLIC_STATION_LON || "106.7308");
 
-
+          let stationStatus: "online" | "offline" = "offline";
+          if (latest?.timestamp) {
+            const latestDate = new Date(latest.timestamp + "Z");
+            const now = new Date();
+            if (now.getTime() - latestDate.getTime() <= 1800000) {
+              stationStatus = "online";
+            }
+          }
 
           setStation({
             id: "ST-01",
             name: "Stasiun Pusat",
             location: "Bogor, Jawa Barat, Indonesia",
-            status: "online",
+            status: stationStatus,
             coordinates: [
               latest?.lat != null ? latest.lat : envLat,
               latest?.lon != null ? latest.lon : envLon,
