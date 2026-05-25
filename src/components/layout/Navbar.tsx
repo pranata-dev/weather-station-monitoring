@@ -36,7 +36,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 const navLinks = [
   { href: "/", label: "Peta Langsung", icon: Map },
-  { href: "/dashboard", label: "Dasbor", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
 export default function Navbar() {
