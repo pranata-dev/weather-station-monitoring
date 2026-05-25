@@ -19,7 +19,7 @@ export function useWeather() {
         
         const [latestRes, historyRes] = await Promise.all([
           fetch(`${API_URL}/api/v1/sensor/latest`),
-          fetch(`${API_URL}/api/v1/sensor/history?limit=288`)
+          fetch(`${API_URL}/api/v1/sensor/history?limit=2100`)
         ]);
 
         if (!latestRes.ok || !historyRes.ok) {
@@ -34,13 +34,7 @@ export function useWeather() {
           const envLat = parseFloat(process.env.NEXT_PUBLIC_STATION_LAT || "-6.5577");
           const envLon = parseFloat(process.env.NEXT_PUBLIC_STATION_LON || "106.7308");
 
-          const oneDayAgo = new Date();
-          oneDayAgo.setHours(oneDayAgo.getHours() - 24);
 
-          const filteredTimeSeries = (historyData.data || []).filter((item: any) => {
-              const itemDate = new Date(item.timestamp + "Z");
-              return itemDate >= oneDayAgo;
-          });
 
           setStation({
             id: "ST-01",
@@ -52,7 +46,7 @@ export function useWeather() {
               latest?.lon != null ? latest.lon : envLon,
             ],
             latestData: latest,
-            timeSeries: filteredTimeSeries,
+            timeSeries: historyData.data || [],
           });
         }
       } catch (err) {
