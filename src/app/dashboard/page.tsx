@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
+import { StationAccessDialog } from "@/components/dialogs/StationAccessDialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Thermometer,
@@ -72,6 +72,9 @@ export default function DashboardPage() {
   const [station, setStation] = useState<Station | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(false);
+  const [selectedStationId, setSelectedStationId] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -296,26 +299,29 @@ export default function DashboardPage() {
                       ].map((metric) => (
                         <div
                           key={metric.id}
-                          className="rounded-lg bg-muted/60 p-2.5 cursor-default"
+                          className="rounded-lg bg-muted/60 p-2.5 cursor-default overflow-hidden"
                         >
-                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                            <metric.icon className={`h-3 w-3 ${metric.color}`} />
-                            {metric.label}
+                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+                            <metric.icon className={`h-3 w-3 shrink-0 ${metric.color}`} />
+                            <span className="truncate">{metric.label}</span>
                           </div>
-                          <p className="mt-0.5 text-sm font-semibold tabular-nums">
+                          <p className="mt-0.5 text-xs font-semibold tabular-nums tracking-tighter truncate">
                             {metric.value ?? "--"}
-                            <span className="text-[10px] font-normal text-muted-foreground"> {metric.unit}</span>
+                            <span className="text-[10px] font-normal text-muted-foreground ml-0.5">{metric.unit}</span>
                           </p>
                         </div>
                       ))}
                     </div>
-                    <Link
-                      href={`/station/${station.id}`}
-                      className="mt-3 flex items-center justify-end text-xs text-muted-foreground transition-colors hover:text-primary"
+                    <button
+                      onClick={() => {
+                        setSelectedStationId(station.id);
+                        setIsAccessDialogOpen(true);
+                      }}
+                      className="mt-3 flex w-full items-center justify-end text-xs text-muted-foreground transition-colors hover:text-primary"
                     >
                       Lihat Detail
                       <ExternalLink className="ml-1 h-3 w-3" />
-                    </Link>
+                    </button>
                   </CardContent>
                 </Card>
               </div>
@@ -323,6 +329,11 @@ export default function DashboardPage() {
           )}
         </div>
 
+        <StationAccessDialog
+          open={isAccessDialogOpen}
+          onOpenChange={setIsAccessDialogOpen}
+          stationId={selectedStationId}
+        />
 
       </main>
     </div>

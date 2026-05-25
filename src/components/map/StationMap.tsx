@@ -20,6 +20,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
+import { StationAccessDialog } from "@/components/dialogs/StationAccessDialog";
 
 const LIGHT_STYLE = "https://tiles.versatiles.org/assets/styles/colorful/style.json";
 const DARK_STYLE = "https://tiles.versatiles.org/assets/styles/eclipse/style.json";
@@ -35,6 +36,7 @@ export default function StationMap() {
   const { resolvedTheme } = useTheme();
   const { station } = useWeather();
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(false);
 
   const stations = station ? [station] : [];
 
@@ -142,49 +144,55 @@ export default function StationMap() {
 
             {/* Current Readings */}
             <div className="mb-2.5 grid grid-cols-3 gap-1.5">
-              <div className="rounded-md bg-black/5 dark:bg-white/5 p-1.5">
-                <div className="mb-0.5 flex items-center gap-1 text-[10px] opacity-50">
-                  <Thermometer className="h-2.5 w-2.5" />
+              <div className="rounded-md bg-black/5 dark:bg-white/5 p-1.5 overflow-hidden">
+                <div className="mb-0.5 flex items-center gap-1 text-[10px] opacity-50 truncate">
+                  <Thermometer className="h-2.5 w-2.5 shrink-0" />
                   Suhu
                 </div>
-                <p className="text-sm font-semibold">
+                <p className="text-xs font-semibold tracking-tighter truncate">
                   {selectedStation.latestData?.temperature ?? "--"}
-                  <span className="text-[10px] font-normal opacity-50"> C</span>
+                  <span className="text-[10px] font-normal opacity-50 ml-0.5">C</span>
                 </p>
               </div>
-              <div className="rounded-md bg-black/5 dark:bg-white/5 p-1.5">
-                <div className="mb-0.5 flex items-center gap-1 text-[10px] opacity-50">
-                  <Droplets className="h-2.5 w-2.5" />
-                  Kelembaban
+              <div className="rounded-md bg-black/5 dark:bg-white/5 p-1.5 overflow-hidden">
+                <div className="mb-0.5 flex items-center gap-1 text-[10px] opacity-50 truncate">
+                  <Droplets className="h-2.5 w-2.5 shrink-0" />
+                  Lembab
                 </div>
-                <p className="text-sm font-semibold">
+                <p className="text-xs font-semibold tracking-tighter truncate">
                   {selectedStation.latestData?.humidity ?? "--"}
-                  <span className="text-[10px] font-normal opacity-50"> %</span>
+                  <span className="text-[10px] font-normal opacity-50 ml-0.5">%</span>
                 </p>
               </div>
-              <div className="rounded-md bg-black/5 dark:bg-white/5 p-1.5">
-                <div className="mb-0.5 flex items-center gap-1 text-[10px] opacity-50">
-                  <Gauge className="h-2.5 w-2.5" />
+              <div className="rounded-md bg-black/5 dark:bg-white/5 p-1.5 overflow-hidden">
+                <div className="mb-0.5 flex items-center gap-1 text-[10px] opacity-50 truncate">
+                  <Gauge className="h-2.5 w-2.5 shrink-0" />
                   Tekanan
                 </div>
-                <p className="text-sm font-semibold">
+                <p className="text-xs font-semibold tracking-tighter truncate">
                   {selectedStation.latestData?.pressure ?? "--"}
-                  <span className="text-[10px] font-normal opacity-50"> hPa</span>
+                  <span className="text-[10px] font-normal opacity-50 ml-0.5">hPa</span>
                 </p>
               </div>
             </div>
 
             {/* View Dashboard Link */}
-            <Link
-              href={`/station/${selectedStation.id}`}
+            <button
+              onClick={() => setIsAccessDialogOpen(true)}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-blue-500/15 px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 transition-colors hover:bg-blue-500/25"
             >
               Lihat Dasbor
               <ExternalLink className="h-3 w-3" />
-            </Link>
+            </button>
           </div>
         </Popup>
       )}
+
+      <StationAccessDialog
+        open={isAccessDialogOpen}
+        onOpenChange={setIsAccessDialogOpen}
+        stationId={selectedStation?.id || null}
+      />
     </MapGL>
   );
 }

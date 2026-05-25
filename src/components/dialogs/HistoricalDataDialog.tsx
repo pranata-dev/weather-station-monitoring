@@ -33,10 +33,6 @@ export function HistoricalDataDialog({
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
 
-  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
-  const [password, setPassword] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
   const [visibleCount, setVisibleCount] = useState(10);
 
   const filteredData = useMemo(() => {
@@ -82,43 +78,8 @@ export function HistoricalDataDialog({
   }, [filteredData, visibleCount]);
 
   const handleDownloadClick = () => {
-    setPassword("");
-    setPasswordError("");
-    setIsPasswordOpen(true);
-  };
-
-  const verifyAndDownload = async () => {
     if (!selectedMetric || filteredData.length === 0) return;
-
-    setIsVerifying(true);
-    setPasswordError("");
-
-    try {
-      const res = await fetch("/api/verify-export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          stationId: "ST-01", // Currently hardcoded in the frontend logic for single station view
-          password,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setPasswordError(data.error || "Gagal memverifikasi password.");
-        setIsVerifying(false);
-        return;
-      }
-
-      // If success, proceed to download
-      downloadCSV(filteredData, selectedMetric.id, selectedMetric.unit, "ST-01");
-      setIsPasswordOpen(false);
-    } catch (err) {
-      setPasswordError("Kesalahan jaringan, coba lagi.");
-    } finally {
-      setIsVerifying(false);
-    }
+    downloadCSV(filteredData, selectedMetric.id, selectedMetric.unit, "ST-01");
   };
 
   return (
@@ -233,50 +194,6 @@ export function HistoricalDataDialog({
           </div>
         </div>
       </DialogContent>
-
-      <Dialog open={isPasswordOpen} onOpenChange={setIsPasswordOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Verifikasi Akses</DialogTitle>
-            <DialogDescription>
-              Masukkan password station untuk mengunduh data raw CSV.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Masukkan password..."
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") verifyAndDownload();
-                }}
-              />
-              {passwordError && (
-                <p className="text-sm text-red-500 font-medium">{passwordError}</p>
-              )}
-            </div>
-          </div>
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setIsPasswordOpen(false)}>
-              Batal
-            </Button>
-            <Button onClick={verifyAndDownload} disabled={isVerifying || !password}>
-              {isVerifying ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Memverifikasi...
-                </>
-              ) : (
-                "Unduh"
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </Dialog>
   );
 }
