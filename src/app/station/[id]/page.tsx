@@ -375,7 +375,16 @@ export default function StationDetailPage({
 
           <div>
             <h2 className="mb-4 text-lg font-semibold">Lokasi Stasiun</h2>
-            <SingleStationMap station={currentStation} />
+            {isLoading || !station ? (
+              <div className="flex h-[300px] w-full items-center justify-center rounded-xl border border-dashed border-border bg-muted/20">
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <p className="text-sm">Memuat peta...</p>
+                </div>
+              </div>
+            ) : (
+              <SingleStationMap station={currentStation} />
+            )}
           </div>
         </div>
 
