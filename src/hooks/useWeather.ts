@@ -37,7 +37,7 @@ export function useWeather() {
             if (latest?.timestamp) {
               const latestDate = new Date(latest.timestamp + "Z");
               const now = new Date();
-              if (now.getTime() - latestDate.getTime() <= 1800000) {
+              if (now.getTime() - latestDate.getTime() <= 900000) {
                 stationStatus = "online";
               }
             }
