@@ -70,7 +70,7 @@ function getTimeOfDayInfo(timestamp: string | null | undefined) {
 }
 
 export default function DashboardPage() {
-  const { stations, isLoading, error } = useWeather();
+  const { stations = [], isLoading, error } = useWeather();
   
   const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(false);
   const [selectedStationId, setSelectedStationId] = useState<string | null>(null);

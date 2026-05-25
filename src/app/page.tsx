@@ -7,8 +7,7 @@ import { useWeather } from "@/hooks/useWeather";
 import { Radio, Wifi, WifiOff } from "lucide-react";
 
 export default function HomePage() {
-  const { station } = useWeather();
-  const stations: Station[] = station ? [station] : [];
+  const { stations = [] } = useWeather();
   const onlineCount = stations.filter((s) => s.status === "online").length;
   const offlineCount = stations.filter((s) => s.status === "offline").length;
 

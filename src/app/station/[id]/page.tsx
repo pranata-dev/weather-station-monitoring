@@ -73,7 +73,7 @@ export default function StationDetailPage({
 }) {
   const { id } = use(params);
   
-  const { stations, isLoading: isStationsLoading, error: stationsError } = useWeather();
+  const { stations = [], isLoading: isStationsLoading, error: stationsError } = useWeather();
   const stationInfo = stations.find(s => s.id === id);
 
   const [timeSeries, setTimeSeries] = useState<any[]>([]);

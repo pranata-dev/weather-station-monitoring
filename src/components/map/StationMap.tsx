@@ -34,7 +34,7 @@ const INITIAL_VIEW = {
 
 export default function StationMap() {
   const { resolvedTheme } = useTheme();
-  const { stations } = useWeather();
+  const { stations = [] } = useWeather();
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [isAccessDialogOpen, setIsAccessDialogOpen] = useState(false);
 
