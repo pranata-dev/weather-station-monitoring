@@ -9,6 +9,9 @@ export function useWeather() {
   const [stations, setStations] = useState<Station[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [trigger, setTrigger] = useState(0);
+
+  const refetch = () => setTrigger((prev) => prev + 1);
 
   useEffect(() => {
     let isMounted = true;
@@ -78,9 +81,9 @@ export function useWeather() {
       isMounted = false;
       clearInterval(intervalId);
     };
-  }, []);
+  }, [trigger]);
 
-  return { stations, isLoading, error };
+  return { stations, isLoading, error, refetch };
 }
 
 export async function fetchStationHistory(stationCode: string, limit: number = 2100) {

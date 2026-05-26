@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShieldCheck, LogOut, Radio, Wifi, WifiOff, Plus } from "lucide-react";
+import { Loader2, ShieldCheck, LogOut, Radio, Wifi, WifiOff, Plus, Pencil } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import {
   Dialog,
@@ -30,8 +30,8 @@ import { Badge } from "@/components/ui/badge";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export function AdminDashboardClient() {
-  const { stations = [], isLoading, error } = useWeather();
-  
+  const { stations = [], isLoading, error, refetch } = useWeather();
+
   const onlineCount = stations.filter(s => s.status === "online").length;
   const offlineCount = stations.filter(s => s.status === "offline").length;
 
@@ -39,6 +39,17 @@ export function AdminDashboardClient() {
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Edit State
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    station_code: "",
+    name: "",
+    location: "",
+  });
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+  const [editSuccessMsg, setEditSuccessMsg] = useState("");
+  const [editErrorMsg, setEditErrorMsg] = useState("");
 
   const [formData, setFormData] = useState({
     station_code: "",
@@ -50,6 +61,21 @@ export function AdminDashboardClient() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleEditClick = (station: any) => {
+    setEditFormData({
+      station_code: station.id,
+      name: station.name,
+      location: station.location,
+    });
+    setEditSuccessMsg("");
+    setEditErrorMsg("");
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -83,10 +109,45 @@ export function AdminDashboardClient() {
       });
       // Close dialog after a short delay
       setTimeout(() => setIsDialogOpen(false), 2000);
+      refetch();
     } catch (err: any) {
       setErrorMsg(err.message || "Terjadi kesalahan jaringan.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsEditSubmitting(true);
+    setEditSuccessMsg("");
+    setEditErrorMsg("");
+
+    try {
+      const res = await fetch(`${API_URL}/api/v1/stations/update/${editFormData.station_code}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: editFormData.name,
+          location: editFormData.location,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.detail || "Gagal mengupdate stasiun");
+      }
+
+      setEditSuccessMsg("Stasiun berhasil diupdate!");
+      refetch();
+      setTimeout(() => setIsEditDialogOpen(false), 2000);
+    } catch (err: any) {
+      setEditErrorMsg(err.message || "Terjadi kesalahan jaringan.");
+    } finally {
+      setIsEditSubmitting(false);
     }
   };
 
@@ -152,7 +213,7 @@ export function AdminDashboardClient() {
               <CardTitle>Daftar Stasiun Terdaftar</CardTitle>
               <CardDescription>Semua stasiun yang terhubung ke jaringan telemetri.</CardDescription>
             </div>
-            
+
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -195,11 +256,51 @@ export function AdminDashboardClient() {
                     <Input id="location" name="location" placeholder="e.g. Bogor, Indonesia" required value={formData.location} onChange={handleChange} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="access_password">Password Akses Dasbor</Label>
+                    <Label htmlFor="access_password">Password Akses Dashboard</Label>
                     <Input id="access_password" name="access_password" type="password" required value={formData.access_password} onChange={handleChange} />
                   </div>
                   <Button type="submit" disabled={isSubmitting} className="w-full">
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Daftarkan Stasiun"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Edit Stasiun</DialogTitle>
+                  <DialogDescription>
+                    Perbarui nama atau lokasi stasiun.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleUpdate} className="space-y-4 pt-4">
+                  {editSuccessMsg && (
+                    <div className="p-3 text-sm text-emerald-600 bg-emerald-500/10 rounded-md border border-emerald-500/20 font-medium">
+                      {editSuccessMsg}
+                    </div>
+                  )}
+                  {editErrorMsg && (
+                    <div className="p-3 text-sm text-red-600 bg-red-500/10 rounded-md border border-red-500/20 font-medium">
+                      {editErrorMsg}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label>Kode Stasiun</Label>
+                    <Input disabled value={editFormData.station_code} className="bg-muted" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_name">Nama Stasiun</Label>
+                    <Input id="edit_name" name="name" placeholder="e.g. Stasiun IPB" required value={editFormData.name} onChange={handleEditChange} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_location">Lokasi</Label>
+                    <Input id="edit_location" name="location" placeholder="e.g. Bogor, Indonesia" required value={editFormData.location} onChange={handleEditChange} />
+                  </div>
+                  <Button type="submit" disabled={isEditSubmitting} className="w-full">
+                    {isEditSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Simpan Perubahan"}
                   </Button>
                 </form>
               </DialogContent>
@@ -241,7 +342,10 @@ export function AdminDashboardClient() {
                         <TableCell>{station.name}</TableCell>
                         <TableCell className="text-muted-foreground">{station.location}</TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" asChild>
+                          <Button variant="ghost" size="icon" onClick={() => handleEditClick(station)} title="Edit Stasiun">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" asChild className="ml-2">
                             <a href={`/station/${station.id}`}>Lihat Detail</a>
                           </Button>
                         </TableCell>

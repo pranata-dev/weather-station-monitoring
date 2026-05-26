@@ -86,6 +86,8 @@ export default function StationDetailPage({
   } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  const [dynamicLocation, setDynamicLocation] = useState<string>("");
+
   useEffect(() => {
     let isMounted = true;
     async function loadHistory() {
@@ -131,6 +133,39 @@ export default function StationDetailPage({
     latestData: null,
     timeSeries: [],
   };
+
+  useEffect(() => {
+    const lat = currentStation.latestData?.lat;
+    const lon = currentStation.latestData?.lon;
+    if (lat && lon) {
+      let isMounted = true;
+      async function fetchLocation() {
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`, {
+            headers: {
+              'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
+            }
+          });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (isMounted && data && data.address) {
+            const city = data.address.city || data.address.town || data.address.village || data.address.county || data.address.state_district;
+            const state = data.address.state;
+            if (city && state) {
+              setDynamicLocation(`${city}, ${state}`);
+            } else if (data.display_name) {
+              const parts = data.display_name.split(", ");
+              setDynamicLocation(parts.slice(0, 2).join(", "));
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch location", err);
+        }
+      }
+      fetchLocation();
+      return () => { isMounted = false; };
+    }
+  }, [currentStation.latestData?.lat, currentStation.latestData?.lon]);
 
   const lastSeenFormatted = currentStation.latestData?.timestamp
     ? formatToWIB(currentStation.latestData.timestamp, "full")
@@ -279,7 +314,7 @@ export default function StationDetailPage({
               <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <MapPin className="h-3.5 w-3.5" />
-                  {currentStation.location}
+                  {dynamicLocation || currentStation.location}
                 </span>
                 {(() => {
                   const timeInfo = getTimeOfDayInfo(currentStation.latestData?.timestamp);
