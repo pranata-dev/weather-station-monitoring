@@ -11,6 +11,7 @@ import {
   Plus,
   Settings,
   MapPin,
+  Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [addStationOpen, setAddStationOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [collabOpen, setCollabOpen] = useState(false);
 
   return (
     <>
@@ -94,8 +96,17 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Right: Theme toggle */}
+          {/* Right: Theme toggle + Collab */}
           <div className="flex min-w-0 flex-1 items-center justify-end gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCollabOpen(true)}
+              className="gap-2 text-primary hover:text-primary hover:bg-primary/10"
+            >
+              <Handshake className="h-4 w-4" />
+              <span className="hidden sm:inline">Kolaborasi</span>
+            </Button>
             <ThemeToggle />
           </div>
         </div>
@@ -135,6 +146,28 @@ export default function Navbar() {
               Daftarkan Stasiun
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Collaboration Dialog */}
+      <Dialog open={collabOpen} onOpenChange={setCollabOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Bergabung dalam Jaringan Pemantauan Cuaca</DialogTitle>
+            <DialogDescription>
+              Memiliki stasiun cuaca berbasis ESP32, AWS, atau sistem pemantauan lainnya? Kami terbuka untuk kolaborasi dalam integrasi dan visualisasi data untuk memperluas cakupan jaringan pemantauan cuaca secara real-time.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center py-4">
+            <Button
+              asChild
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
+              <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer">
+                Hubungi Kami via WhatsApp!
+              </a>
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
