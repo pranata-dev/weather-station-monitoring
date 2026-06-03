@@ -33,12 +33,18 @@ export function HistoricalDataDialog({
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
 
-  const [visibleCount, setVisibleCount] = useState(10);
+  const [expandedParams, setExpandedParams] = useState<Record<string, boolean>>({});
 
   const filteredData = useMemo(() => {
     if (!timeSeries || timeSeries.length === 0) return [];
 
-    return timeSeries.filter((row) => {
+    const sortedData = [...timeSeries].sort((a, b) => {
+      const timeA = new Date(a.timestamp.endsWith("Z") || a.timestamp.includes("+") ? a.timestamp : `${a.timestamp}Z`).getTime();
+      const timeB = new Date(b.timestamp.endsWith("Z") || b.timestamp.includes("+") ? b.timestamp : `${b.timestamp}Z`).getTime();
+      return timeB - timeA;
+    });
+
+    return sortedData.filter((row) => {
       // Create a Date object from the UTC timestamp
       const utcTimestamp = row.timestamp.endsWith("Z") || row.timestamp.includes("+") 
         ? row.timestamp 
@@ -74,8 +80,10 @@ export function HistoricalDataDialog({
   }, [timeSeries, startDate, endDate, startTime, endTime]);
 
   const visibleData = useMemo(() => {
-    return filteredData.slice(0, visibleCount);
-  }, [filteredData, visibleCount]);
+    if (!selectedMetric) return [];
+    const isExpanded = expandedParams[selectedMetric.id];
+    return isExpanded ? filteredData : filteredData.slice(0, 5);
+  }, [filteredData, expandedParams, selectedMetric]);
 
   const handleDownloadClick = () => {
     if (!selectedMetric || filteredData.length === 0) return;
@@ -180,14 +188,21 @@ export function HistoricalDataDialog({
               </tbody>
             </table>
             
-            {visibleCount < filteredData.length && (
+            {filteredData.length > 5 && (
               <div className="p-4 border-t border-border">
                 <Button 
                   variant="outline" 
                   className="w-full"
-                  onClick={() => setVisibleCount((prev) => prev + 10)}
+                  onClick={() => {
+                    if (selectedMetric) {
+                      setExpandedParams(prev => ({
+                        ...prev,
+                        [selectedMetric.id]: !prev[selectedMetric.id]
+                      }));
+                    }
+                  }}
                 >
-                  Lihat selengkapnya
+                  {selectedMetric && expandedParams[selectedMetric.id] ? "Show Less" : "See More"}
                 </Button>
               </div>
             )}
