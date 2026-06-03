@@ -94,37 +94,9 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Right: Theme toggle + kebab menu */}
+          {/* Right: Theme toggle */}
           <div className="flex min-w-0 flex-1 items-center justify-end gap-1">
             <ThemeToggle />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  id="kebab-menu-trigger"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  aria-label="Opsi lainnya"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel>Tindakan</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  id="add-station-menu-item"
-                  onSelect={() => setAddStationOpen(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Tambah Stasiun Cuaca
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
-                  <Settings className="h-4 w-4" />
-                  Pengaturan Sistem
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
       </nav>

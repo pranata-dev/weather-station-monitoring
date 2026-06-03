@@ -26,10 +26,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import MapGL, { Marker, NavigationControl } from "react-map-gl/maplibre";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { useTheme } from "next-themes";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const LIGHT_STYLE = "https://tiles.versatiles.org/assets/styles/colorful/style.json";
+const DARK_STYLE = "https://tiles.versatiles.org/assets/styles/eclipse/style.json";
 
 export function AdminDashboardClient() {
+  const { resolvedTheme } = useTheme();
   const { stations = [], isLoading, error, refetch } = useWeather();
 
   const onlineCount = stations.filter(s => s.status === "online").length;
@@ -57,7 +63,11 @@ export function AdminDashboardClient() {
     api_key: "",
     location: "",
     access_password: "",
+    default_lat: -0.7893,
+    default_lon: 113.9213,
   });
+
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -106,6 +116,8 @@ export function AdminDashboardClient() {
         api_key: "",
         location: "",
         access_password: "",
+        default_lat: -0.7893,
+        default_lon: 113.9213,
       });
       // Close dialog after a short delay
       setTimeout(() => setIsDialogOpen(false), 2000);
@@ -251,10 +263,86 @@ export function AdminDashboardClient() {
                     <Label htmlFor="api_key">Device Token (API Key / Passkey)</Label>
                     <Input id="api_key" name="api_key" placeholder="32-character MD5 hash" required value={formData.api_key} onChange={handleChange} />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Lokasi</Label>
-                    <Input id="location" name="location" placeholder="e.g. Bogor, Indonesia" required value={formData.location} onChange={handleChange} />
+                  <div className="space-y-2 flex flex-col">
+                    <Label htmlFor="location" className="flex items-center gap-2">
+                      Lokasi (Teks)
+                      {isGeocoding && <span className="text-xs text-muted-foreground animate-pulse">Mencari lokasi...</span>}
+                    </Label>
+                    <Input id="location" name="location" placeholder={isGeocoding ? "Mencari lokasi..." : "e.g. Bogor, Indonesia"} required value={isGeocoding ? "Mencari lokasi..." : formData.location} onChange={handleChange} disabled={isGeocoding} />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label>Pilih Titik Lokasi di Peta</Label>
+                    <div className="h-[250px] w-full overflow-hidden rounded-md border border-border">
+                      <MapGL
+                        initialViewState={{
+                          longitude: 113.9213,
+                          latitude: -0.7893,
+                          zoom: 3.5,
+                        }}
+                        mapStyle={resolvedTheme === "dark" ? DARK_STYLE : LIGHT_STYLE}
+                        attributionControl={false}
+                        onClick={async (e) => {
+                          const lat = e.lngLat.lat;
+                          const lon = e.lngLat.lng;
+                          setFormData(prev => ({
+                            ...prev,
+                            default_lat: lat,
+                            default_lon: lon,
+                          }));
+                          
+                          setIsGeocoding(true);
+                          try {
+                            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`, {
+                              headers: { 'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7' }
+                            });
+                            if (res.ok) {
+                              const data = await res.json();
+                              if (data && data.address) {
+                                const city = data.address.city || data.address.town || data.address.village || data.address.county || data.address.state_district;
+                                const state = data.address.state;
+                                let locationName = "";
+                                if (city && state) {
+                                  locationName = `${city}, ${state}`;
+                                } else if (data.display_name) {
+                                  const parts = data.display_name.split(", ");
+                                  locationName = parts.slice(0, 2).join(", ");
+                                }
+                                if (locationName) {
+                                  setFormData(prev => ({ ...prev, location: locationName }));
+                                }
+                              }
+                            }
+                          } catch (err) {
+                            console.error("Reverse geocoding failed", err);
+                          } finally {
+                            setIsGeocoding(false);
+                          }
+                        }}
+                      >
+                        <NavigationControl position="top-right" showCompass={false} />
+                        <Marker
+                          longitude={formData.default_lon}
+                          latitude={formData.default_lat}
+                          anchor="bottom"
+                        >
+                          <div className="h-4 w-4 rounded-full border-2 border-white bg-red-500 shadow-md" />
+                        </Marker>
+                      </MapGL>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Latitude</Label>
+                        <Input readOnly value={formData.default_lat.toFixed(6)} className="h-8 text-xs bg-muted" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Longitude</Label>
+                        <Input readOnly value={formData.default_lon.toFixed(6)} className="h-8 text-xs bg-muted" />
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="access_password">Password Akses Dashboard</Label>
                     <Input id="access_password" name="access_password" type="password" required value={formData.access_password} onChange={handleChange} />
