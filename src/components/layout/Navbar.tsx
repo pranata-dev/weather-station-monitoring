@@ -163,7 +163,7 @@ export default function Navbar() {
               asChild
               className="w-full bg-green-600 hover:bg-green-700 text-white"
             >
-              <a href="https://wa.me/81386986115" target="_blank" rel="noopener noreferrer">
+              <a href="https://wa.me/6281386986115" target="_blank" rel="noopener noreferrer">
                 Hubungi Kami via WhatsApp!
               </a>
             </Button>
